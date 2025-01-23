@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35527.113
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BioVirt.Client", "biovirt.client\BioVirt.Client.csproj", "{CBA4A776-0C05-4AC0-B8DE-A32CE4A2014A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BioVirt.Api", "BioVirt.Api\BioVirt.Api.csproj", "{BA8FBDAD-3214-4E28-A675-A6349C42DAA9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BioVirt.Shared", "BioVirt.Shared\BioVirt.Shared.csproj", "{5DA79A9E-D82C-415E-BEEC-5D467AD4D8CA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CBA4A776-0C05-4AC0-B8DE-A32CE4A2014A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CBA4A776-0C05-4AC0-B8DE-A32CE4A2014A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CBA4A776-0C05-4AC0-B8DE-A32CE4A2014A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CBA4A776-0C05-4AC0-B8DE-A32CE4A2014A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA8FBDAD-3214-4E28-A675-A6349C42DAA9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA8FBDAD-3214-4E28-A675-A6349C42DAA9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA8FBDAD-3214-4E28-A675-A6349C42DAA9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA8FBDAD-3214-4E28-A675-A6349C42DAA9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5DA79A9E-D82C-415E-BEEC-5D467AD4D8CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5DA79A9E-D82C-415E-BEEC-5D467AD4D8CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5DA79A9E-D82C-415E-BEEC-5D467AD4D8CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5DA79A9E-D82C-415E-BEEC-5D467AD4D8CA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
