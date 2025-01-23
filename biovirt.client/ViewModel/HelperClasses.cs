@@ -27,4 +27,13 @@ namespace BioVirt.Client.ViewModel
         public WebGLBuffer Color { get; set; }
         public WebGLBuffer Indices { get; set; }
     }
+
+    public class Camera
+    {
+        public float X { get; set; }
+        public float Y { get; set; }
+        public float Z { get; set; } = 1.0f;
+        public float Rotation { get; set; }
+        public float Zoom { get; set; } = 1.0f;
+    }
 }

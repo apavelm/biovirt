@@ -6,19 +6,27 @@
 
 <PageTitle>WebGL canvas</PageTitle>
 
-<div tabindex="0">
+<div tabindex="0" oncontextmenu="return false;" @onmousemove="OnMouseMove" @onmouseup="OnMouseUp" @onmousedown="OnMouseDown" @onmousewheel="OnMouseWheel">
     <BECanvas Width="800" Height="600" @ref="_canvasReference" />
 </div>
 
+<p>
+    dragging: @_isDragging.ToString()
+    right_dragging: @_isRightDragging.ToString()
+    zoom: @_camera.Zoom
+</p>
+
 @code {
+    private const float DefaultScaleBy = 0.1f;
+
     private BECanvasComponent _canvasReference;
     private WebGLContext _gl;
 
     private ProgramInfo _programInfo;
+    private Camera _camera = new Camera();
+    private Buffers _buffers = new Buffers();
 
-    private Buffers _buffers;
-
-
+    // TODO: replace with dynamic loading from DiCoM
     private readonly float[] _positions = new float[] {
         // Front face
         -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f,
@@ -38,7 +46,6 @@
         // Left face
         -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, -1.0f
     };
-
     private readonly ushort[] _indices = new ushort[] {
         0,
         1,
@@ -77,7 +84,6 @@
         22,
         23, // left
     };
-
     private readonly float[] _colors = new float[]
     {
             1.0f, 1.0f, 1.0f, 1.0f, // Front face (white)
@@ -110,12 +116,14 @@
             1.0f, 0.0f, 1.0f, 1.0f,
             1.0f, 0.0f, 1.0f, 1.0f,
     };
+    
 
-    private float _cameraX = 0, _cameraY = 0, _cameraZoom = 1, _cameraRotation = 0;
     private float[] _viewProjectionMatrix;
 
     private bool _isDragging = false;
-    private float startMouseX, startMouseY;
+    private bool _isRightDragging = false;
+    
+    private float _startMouseX, _startMouseY;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -123,7 +131,6 @@
         {
             _gl = await _canvasReference.CreateWebGLAsync();
             _programInfo = new ProgramInfo();
-            _buffers = new Buffers();
 
             await _gl.ClearColorAsync(0.8f, 0.8f, 0.8f, 1.0f);
 
@@ -131,7 +138,7 @@
             await InitializeShadersAsync();
             await InitializeBuffersAsync();
 
-            await DrawSceneAsync(0.5f);
+            await DrawSceneAsync();
         }
     }
 
@@ -180,55 +187,33 @@
         await _gl.BufferDataAsync(BufferType.ARRAY_BUFFER, _colors, BufferUsageHint.STATIC_DRAW);
     }
 
-
-    // private async Task DrawSceneAsync()
-    // {
-    //     await _gl.ClearAsync(BufferBits.COLOR_BUFFER_BIT);
-
-    //     _viewProjectionMatrix = MultiplyMatrices(
-    //         CreateProjectionMatrix(_canvasReference.Width, _canvasReference.Height),
-    //         CreateCameraMatrix(_cameraX, _cameraY, _cameraRotation, _cameraZoom)
-    //     );
-
-    //     await _gl.UseProgramAsync(_program);
-
-    //     await _gl.BindBufferAsync(BufferType.ARRAY_BUFFER, _positionBuffer);
-    //     await _gl.VertexAttribPointerAsync(0, 2, DataType.FLOAT, false, 0, 0);
-    //     await _gl.EnableVertexAttribArrayAsync(0);
-
-    //     await _gl.BindBufferAsync(BufferType.ELEMENT_ARRAY_BUFFER, _indexBuffer);
-
-    //     float[] color = { 1.0f, 0.0f, 0.0f, 1.0f };
-    //     await _gl.UniformAsync(_uColorLocation, color);
-
-    //     float[] modelMatrix = CreateCameraMatrix(100, 100, 0, 1);
-    //     float[] matrix = MultiplyMatrices(_viewProjectionMatrix, modelMatrix);
-    //     await _gl.UniformMatrixAsync(_uMatrixLocation, false, matrix);
-
-    //     await _gl.DrawElementsAsync(Primitive.TRIANGLES, _indices.Length, DataType.UNSIGNED_SHORT, 0);
-    // }
-
-    public async Task DrawSceneAsync(float cubeRotation)
+    public async Task DrawSceneAsync(float cubeRotation = 0.5f)
     {
+        await _gl.BeginBatchAsync(); // begin the explicit batch
+
         await _gl.ClearColorAsync(0f, 0f, 0f, 1f); // Clear to black
         await _gl.ClearDepthAsync(1f);            // Clear everything
         await _gl.EnableAsync(EnableCap.DEPTH_TEST);
         await _gl.DepthFuncAsync(CompareFunction.LEQUAL);
         await _gl.ClearAsync(BufferBits.COLOR_BUFFER_BIT | BufferBits.DEPTH_BUFFER_BIT);
 
-        // Perspective matrix
-        float fieldOfView = (float)(45 * Math.PI / 180);
-        float aspect = _gl.DrawingBufferWidth / (float)_gl.DrawingBufferHeight;
+        // // Perspective matrix
+        // float fieldOfView = (float)(45 * Math.PI / 180);
+        // float aspect = _gl.DrawingBufferWidth / (float)_gl.DrawingBufferHeight;
         float zNear = 0.1f;
         float zFar = 100.0f;
-        Matrix4x4 projectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(fieldOfView, aspect, zNear, zFar);
+        // Matrix4x4 projectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(fieldOfView, aspect, zNear, zFar);
 
-        // ModelView matrix
-        Matrix4x4 modelViewMatrix = Matrix4x4.Identity;
-        modelViewMatrix = Matrix4x4.CreateTranslation(0f, 0f, -6f) * modelViewMatrix;
-        modelViewMatrix = Matrix4x4.CreateFromAxisAngle(Vector3.UnitZ, cubeRotation) * modelViewMatrix;
-        modelViewMatrix = Matrix4x4.CreateFromAxisAngle(Vector3.UnitY, cubeRotation * 0.7f) * modelViewMatrix;
-        modelViewMatrix = Matrix4x4.CreateFromAxisAngle(Vector3.UnitX, cubeRotation * 0.3f) * modelViewMatrix;
+        // // ModelView matrix
+        // Matrix4x4 modelViewMatrix = Matrix4x4.Identity;
+        // modelViewMatrix = Matrix4x4.CreateTranslation(0f, 0f, -6f) * modelViewMatrix;
+        // modelViewMatrix = Matrix4x4.CreateFromAxisAngle(Vector3.UnitZ, cubeRotation) * modelViewMatrix;
+        // modelViewMatrix = Matrix4x4.CreateFromAxisAngle(Vector3.UnitY, cubeRotation * 0.7f) * modelViewMatrix;
+        // modelViewMatrix = Matrix4x4.CreateFromAxisAngle(Vector3.UnitX, cubeRotation * 0.3f) * modelViewMatrix;
+
+        Matrix4x4 projectionMatrix = Matrix4x4.CreateOrthographic(10 / _camera.Zoom, 10 / _camera.Zoom, zNear, zFar);
+        Matrix4x4 modelViewMatrix = Matrix4x4.CreateRotationZ(_camera.Rotation) *
+                                    Matrix4x4.CreateTranslation(_camera.X, _camera.Y, -10);
 
         // Set position and color attributes
         await SetPositionAttributeAsync();
@@ -262,6 +247,8 @@
 
         // Draw elements
         await _gl.DrawElementsAsync(Primitive.TRIANGLES, 36, DataType.UNSIGNED_SHORT, 0);
+
+        await _gl.EndBatchAsync(); // execute all currently batched calls
     }
 
     private async Task SetPositionAttributeAsync()
@@ -330,17 +317,18 @@
     };
     }
 
-    private static float[] CreateCameraMatrix(float x, float y, float rotation, float zoom)
+    private float[] CreateCameraMatrix()
     {
-        float cos = (float)Math.Cos(rotation);
-        float sin = (float)Math.Sin(rotation);
-        float scale = 1.0f / zoom;
+        float cos = (float) Math.Cos(_camera.Rotation);
+        float sin = (float)Math.Sin(_camera.Rotation);
+        float scale = 1.0f / _camera.Zoom;
 
-        return new float[] {
+        return new float[]
+        {
             cos * scale, -sin * scale, 0,
             sin * scale, cos * scale, 0,
-            -x, -y, 1
-    };
+            -_camera.X, -_camera.Y, _camera.Z
+        };
     }
 
     private static float[] MultiplyMatrices(float[] a, float[] b)
@@ -357,5 +345,114 @@
             a[2] * b[6] + a[5] * b[7] + a[8] * b[8]
     };
     }
-    
+
+    private async Task OnMouseMove(MouseEventArgs e)
+    {
+        if (_isDragging || _isRightDragging)
+        {
+            float deltaX = (float) e.ClientX - _startMouseX;
+            float deltaY = (float) e.ClientY - _startMouseY;
+
+            if (_isDragging)
+            {
+                // Pan
+                _camera.X -= deltaX * 0.01f / _camera.Zoom;
+                _camera.Y += deltaY * 0.01f / _camera.Zoom;
+            }
+            else if (_isRightDragging)
+            {
+                // Rotate
+                _camera.Rotation += deltaX * 0.01f;
+            }
+
+            _startMouseX = (float) e.ClientX;
+            _startMouseY = (float) e.ClientY;
+
+            await DrawSceneAsync();
+        }
+    }
+
+    private void OnMouseDown(MouseEventArgs e)
+    {
+        _isDragging = e.Buttons == 1; // Left button for Pan
+        _isRightDragging = e.Buttons == 2; // Right button for Rotate
+        _startMouseX = (float)e.ClientX;
+        _startMouseY = (float)e.ClientY;
+    }
+
+    private async Task OnMouseWheel(WheelEventArgs e)
+    {
+        if (e.DeltaY > 0)
+        {
+            _camera.Zoom = ((_camera.Zoom + DefaultScaleBy) >= 7) ? _camera.Zoom = 7f : await IncreaseScale();
+        }
+
+        if (e.DeltaY < 0)
+        {
+            _camera.Zoom = ((_camera.Zoom - DefaultScaleBy) <= 0) ? _camera.Zoom = DefaultScaleBy : await DecreaseScale();
+        }
+
+        await DrawSceneAsync();
+    }
+
+    async Task<float> IncreaseScale()
+    {
+        return await Task.Run(() =>
+        {
+            //increase the scale first then calculate the max and min positions
+            _camera.Zoom += DefaultScaleBy;
+            // double scaleFrac = (_camera.Zoom / ScaleToMaximum);
+            // double scaleDiff = (DefaultMoveBy + (DefaultMoveBy * scaleFrac));
+            // double scaleChange = DefaultMoveBy + scaleDiff;
+            // _DefaultMaxPosition += scaleChange;
+            // _DefaultMinPosition -= scaleChange;
+
+            return _camera.Zoom;
+        });
+    }
+
+    async Task<float> DecreaseScale()
+    {
+        return await Task.Run(() =>
+        {
+            _camera.Zoom -= DefaultScaleBy;
+
+            // double scaleFrac = (_camera.Zoom / ScaleToMaximum);
+            // double scaleDiff = (DefaultMoveBy + (DefaultMoveBy * scaleFrac));
+            // double scaleChange = DefaultMoveBy + scaleDiff;
+            // _DefaultMaxPosition -= scaleChange;
+            // _DefaultMinPosition += scaleChange;//DefaultMoveBy;
+
+            // //fix descaling, move the image back into view when descaling (zoomin out)
+            // if (_camera.Zoom <= 1)
+            // {
+            //     _PositionLeft = 0;
+            //     _PositionTop = 0;
+            // }
+            // else
+            // {
+            //     //left can not be more than max position
+            //     _PositionLeft = (_DefaultMaxPosition < _PositionLeft) ? _DefaultMaxPosition : _PositionLeft;
+
+            //     //top can not be more than max position
+            //     _PositionTop = (_DefaultMaxPosition < _PositionTop) ? _DefaultMaxPosition : _PositionTop;
+
+            //     //left can not be less than min position
+            //     _PositionLeft = (_DefaultMinPosition > _PositionLeft) ? _DefaultMinPosition : _PositionLeft;
+
+            //     //top can not be less than min position
+            //     _PositionTop = (_DefaultMinPosition > _PositionTop) ? _DefaultMinPosition : _PositionTop;
+            // }
+            return _camera.Zoom;
+        });
+    }
+
+    private void OnMouseUp(MouseEventArgs obj)
+    {
+        _isDragging = false;
+        _isRightDragging = false;
+    }
+
 }
+
+    
