@@ -2,7 +2,7 @@
 
 ## Prerequicities
 - .NET SDK 9.0 is required: https://dotnet.microsoft.com/en-us/download
-- For logging API uses Seq. Please install it from https://datalust.co/seq
+- For logging API uses Seq. Please install it from https://datalust.co/seq (nothing logged in there so far)
 
 There are two options how to run it.
 
